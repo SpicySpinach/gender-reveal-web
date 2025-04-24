@@ -163,86 +163,95 @@
   </section>
 
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
 
-  <script>
-    // Your Firebase web app configuration
-    const firebaseConfig = {
-      apiKey: "AIzaSyAPFUS1kyNPOS9jd0YCD61WsOo_ZlhtYbI",
-      authDomain: "gender-reveal-e276b.firebaseapp.com",
-      projectId: "gender-reveal-e276b",
-      storageBucket: "gender-reveal-e276b.firebasestorage.app",
-      messagingSenderId: "992506693935",
-      appId: "1:992506693935:web:8064446f59a86cf282b9da",
-      measurementId: "G-T6J4PP7ZND"
-    };
+<script type="module">
+  // Import Firebase modular SDK
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+  import { getFirestore, doc, getDoc, updateDoc, setDoc, increment } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-    // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore(app);
+  // Your Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyAPFUS1kyNPOS9jd0YCD61WsOo_ZlhtYbI",
+    authDomain: "gender-reveal-e276b.firebaseapp.com",
+    projectId: "gender-reveal-e276b",
+    storageBucket: "gender-reveal-e276b.firebasestorage.app",
+    messagingSenderId: "992506693935",
+    appId: "1:992506693935:web:8064446f59a86cf282b9da",
+    measurementId: "G-T6J4PP7ZND"
+  };
 
-    // Fetch current vote counts from Firestore
-    async function fetchVotes() {
-      const docRef = db.collection('votes').doc('gender-votes');
-      const docSnap = await docRef.get();
-    
-      if (docSnap.exists) {
-        const data = docSnap.data();
-        updateBars(data.boy, data.girl);
-      } else {
-        // Create the document with default vote counts
-        await docRef.set({ boy: 0, girl: 0 });
-        updateBars(0, 0);
-      }
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Fetch current vote counts from Firestore
+  async function fetchVotes() {
+    const docRef = doc(db, 'votes', 'gender-votes');
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      updateBars(data.boy, data.girl);
+    } else {
+      await setDoc(docRef, { boy: 0, girl: 0 });
+      updateBars(0, 0);
+    }
+  }
+
+  // Update the vote bars
+  function updateBars(boyVotes, girlVotes) {
+    const totalVotes = boyVotes + girlVotes;
+    const boyPercent = totalVotes ? (boyVotes / totalVotes * 100).toFixed(0) : 50;
+    const girlPercent = totalVotes ? (girlVotes / totalVotes * 100).toFixed(0) : 50;
+
+    document.getElementById('boyBar').style.width = `${boyPercent}%`;
+    document.getElementById('boyBar').textContent = `${boyPercent}% Boy`;
+
+    document.getElementById('girlBar').style.width = `${girlPercent}%`;
+    document.getElementById('girlBar').textContent = `${girlPercent}% Girl`;
+  }
+
+  // Cast a vote
+  async function castVote(choice) {
+    const hasVoted = localStorage.getItem('hasVoted');
+    if (hasVoted) {
+      alert("You've already voted! Thank you ❤️");
+      return;
     }
 
-
-    // Update the vote bars with the fetched data
-    function updateBars(boyVotes, girlVotes) {
-      let totalVotes = boyVotes + girlVotes;
-      let boyPercent = totalVotes ? (boyVotes / totalVotes * 100).toFixed(0) : 50;
-      let girlPercent = totalVotes ? (girlVotes / totalVotes * 100).toFixed(0) : 50;
-
-      document.getElementById('boyBar').style.width = boyPercent + '%';
-      document.getElementById('boyBar').textContent = `${boyPercent}% Boy`;
-
-      document.getElementById('girlBar').style.width = girlPercent + '%';
-      document.getElementById('girlBar').textContent = `${girlPercent}% Girl`;
-    }
-
-    // Cast vote and update Firebase
-      async function castVote(choice) {
-      const hasVoted = localStorage.getItem('hasVoted');
-      if (hasVoted) {
-        alert("You've already voted! Thank you ❤️");
-        return;
-      }
-
-      const docRef = db.collection('votes').doc('gender-votes');
-      await docRef.update({
-        [choice]: firebase.firestore.FieldValue.increment(1)
+    try {
+      const docRef = doc(db, 'votes', 'gender-votes');
+      await updateDoc(docRef, {
+        [choice]: increment(1)
       });
 
       localStorage.setItem('hasVoted', 'true');
       document.getElementById('thankYouMessage').style.display = 'block';
       launchConfetti();
-
-      fetchVotes(); // Refresh vote counts after voting
+      fetchVotes();
+    } catch (err) {
+      console.error("Error voting:", err);
+      alert("Oops! Something went wrong.");
     }
+  }
 
-    function launchConfetti() {
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#4da6ff', '#ff66b3']
-      });
-    }
+  // Confetti animation
+  function launchConfetti() {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#4da6ff', '#ff66b3']
+    });
+  }
 
-    fetchVotes(); // Initial fetch of vote counts when the page loads
+  // Expose castVote to window for HTML button to access it
+  window.castVote = castVote;
 
-  </script>
+  // Fetch votes on load
+  fetchVotes();
+</script>
+
 
 
 </body>
