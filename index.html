@@ -159,7 +159,7 @@
     </div>
 
     <div id="thankYouMessage" class="thank-you" style="display:none;">Thank you for voting!</div>
-    <!-- <button onclick="localStorage.clear(); location.reload();">Reset Votes</button> -->
+    <button onclick="resetVotes()">Reset Votes</button>
   </section>
 
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -182,6 +182,12 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
+
+  async function resetVotes() {
+    await db.collection('votes').doc('gender-votes').set({ boy: 0, girl: 0 });
+    localStorage.removeItem('hasVoted');
+    fetchVotes();
+  }
 
   // Functions
   async function fetchVotes() {
