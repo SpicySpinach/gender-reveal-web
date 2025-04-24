@@ -165,11 +165,11 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
 <script type="module">
-  // Import Firebase modular SDK
+  // Modular Firebase imports
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
   import { getFirestore, doc, getDoc, updateDoc, setDoc, increment } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-  // Your Firebase config
+  // Firebase config and initialization
   const firebaseConfig = {
     apiKey: "AIzaSyAPFUS1kyNPOS9jd0YCD61WsOo_ZlhtYbI",
     authDomain: "gender-reveal-e276b.firebaseapp.com",
@@ -180,11 +180,10 @@
     measurementId: "G-T6J4PP7ZND"
   };
 
-  // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // Fetch current vote counts from Firestore
+  // Functions
   async function fetchVotes() {
     const docRef = doc(db, 'votes', 'gender-votes');
     const docSnap = await getDoc(docRef);
@@ -198,7 +197,6 @@
     }
   }
 
-  // Update the vote bars
   function updateBars(boyVotes, girlVotes) {
     const totalVotes = boyVotes + girlVotes;
     const boyPercent = totalVotes ? (boyVotes / totalVotes * 100).toFixed(0) : 50;
@@ -211,7 +209,6 @@
     document.getElementById('girlBar').textContent = `${girlPercent}% Girl`;
   }
 
-  // Cast a vote
   async function castVote(choice) {
     const hasVoted = localStorage.getItem('hasVoted');
     if (hasVoted) {
@@ -219,23 +216,17 @@
       return;
     }
 
-    try {
-      const docRef = doc(db, 'votes', 'gender-votes');
-      await updateDoc(docRef, {
-        [choice]: increment(1)
-      });
+    const docRef = doc(db, 'votes', 'gender-votes');
+    await updateDoc(docRef, {
+      [choice]: increment(1)
+    });
 
-      localStorage.setItem('hasVoted', 'true');
-      document.getElementById('thankYouMessage').style.display = 'block';
-      launchConfetti();
-      fetchVotes();
-    } catch (err) {
-      console.error("Error voting:", err);
-      alert("Oops! Something went wrong.");
-    }
+    localStorage.setItem('hasVoted', 'true');
+    document.getElementById('thankYouMessage').style.display = 'block';
+    launchConfetti();
+    fetchVotes();
   }
 
-  // Confetti animation
   function launchConfetti() {
     confetti({
       particleCount: 100,
@@ -245,12 +236,13 @@
     });
   }
 
-  // Expose castVote to window for HTML button to access it
+  // 🟢 Expose after everything is ready
   window.castVote = castVote;
 
-  // Fetch votes on load
+  // Fetch initial votes
   fetchVotes();
 </script>
+
 
 
 
