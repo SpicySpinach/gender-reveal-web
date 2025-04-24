@@ -180,7 +180,6 @@
     // Initialize Firebase
     const app = firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore(app);
-
     let hasVoted = localStorage.getItem('hasVoted');
 
     // Fetch current vote counts from Firestore
