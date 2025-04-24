@@ -186,14 +186,17 @@
     async function fetchVotes() {
       const docRef = db.collection('votes').doc('gender-votes');
       const docSnap = await docRef.get();
-
+    
       if (docSnap.exists) {
         const data = docSnap.data();
         updateBars(data.boy, data.girl);
       } else {
-        console.log("No such document!");
+        // Create the document with default vote counts
+        await docRef.set({ boy: 0, girl: 0 });
+        updateBars(0, 0);
       }
     }
+
 
     // Update the vote bars with the fetched data
     function updateBars(boyVotes, girlVotes) {
