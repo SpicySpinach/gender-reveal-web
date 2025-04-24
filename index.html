@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Baby Gender Reveal Invitation</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      scroll-behavior: smooth;
+    }
+    section {
+      padding: 80px 20px;
+      text-align: center;
+    }
+    .hero {
+      background: linear-gradient(to right, #ffe0f0, #e0f0ff);
+      color: #444;
+    }
+    .hero h1 {
+      font-size: 3rem;
+    }
+    .hero p {
+      font-size: 1.3rem;
+      margin-top: 15px;
+    }
+
+    .event-info {
+      background: #fff5fb;
+      color: #333;
+    }
+    .event-info h2 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+    .event-details {
+      font-size: 1.2rem;
+      line-height: 1.8;
+    }
+
+    .vote-section {
+      background: linear-gradient(to right, #e0f0ff, #ffe0f0);
+    }
+    .vote-section h2 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .vote-button {
+      font-size: 1.2rem;
+      padding: 15px 30px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      color: white;
+      transition: background 0.3s;
+    }
+
+    .boy {
+      background-color: #4da6ff;
+    }
+
+    .girl {
+      background-color: #ff66b3;
+    }
+
+    .vote-button:hover {
+      opacity: 0.9;
+    }
+
+    .results {
+      max-width: 400px;
+      margin: 0 auto 30px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .bar {
+      height: 30px;
+      margin-bottom: 10px;
+      background: #eee;
+      border-radius: 15px;
+      overflow: hidden;
+    }
+
+    .bar-inner {
+      height: 100%;
+      line-height: 30px;
+      color: white;
+      font-weight: bold;
+    }
+
+    .boy-bar {
+      background-color: #4da6ff;
+    }
+
+    .girl-bar {
+      background-color: #ff66b3;
+    }
+
+    .thank-you {
+      font-weight: bold;
+      font-size: 1.2rem;
+      color: green;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Section 1: Hero -->
+  <section class="hero">
+    <h1>You're Invited!</h1>
+    <p>Join us as we reveal the gender of our little bundle of joy 💖💙</p>
+  </section>
+
+  <!-- Section 2: Event Info -->
+  <section class="event-info">
+    <h2>🎉 Event Details</h2>
+    <div class="event-details">
+      <p><strong>Date:</strong> May 17</p>
+      <p><strong>Location:</strong> Tanjay City</p>
+      <p><strong>Theme:</strong> Anything comfy! – it's all up to you!</p>
+    </div>
+  </section>
+
+  <!-- Section 3: Voting -->
+  <section class="vote-section">
+    <h2>🗳️ What’s your guess?</h2>
+    <p>Cast your vote below!</p>
+
+    <div class="button-group">
+      <button class="vote-button boy" onclick="castVote('boy')">💙 Boy</button>
+      <button class="vote-button girl" onclick="castVote('girl')">💖 Girl</button>
+    </div>
+
+    <div class="results">
+      <div class="bar">
+        <div class="bar-inner boy-bar" id="boyBar" style="width: 50%">50% Boy</div>
+      </div>
+      <div class="bar">
+        <div class="bar-inner girl-bar" id="girlBar" style="width: 50%">50% Girl</div>
+      </div>
+    </div>
+
+    <div id="thankYouMessage" class="thank-you" style="display:none;">Thank you for voting!</div>
+    <!-- <button onclick="localStorage.clear(); location.reload();">Reset Votes</button> -->
+  </section>
+
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+
+  <script>
+    // Your Firebase web app configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAPFUS1kyNPOS9jd0YCD61WsOo_ZlhtYbI",
+      authDomain: "gender-reveal-e276b.firebaseapp.com",
+      projectId: "gender-reveal-e276b",
+      storageBucket: "gender-reveal-e276b.firebasestorage.app",
+      messagingSenderId: "992506693935",
+      appId: "1:992506693935:web:8064446f59a86cf282b9da",
+      measurementId: "G-T6J4PP7ZND"
+    };
+
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore(app);
+
+    let hasVoted = localStorage.getItem('hasVoted');
+
+    // Fetch current vote counts from Firestore
+    async function fetchVotes() {
+      const docRef = db.collection('votes').doc('gender-votes');
+      const docSnap = await docRef.get();
+
+      if (docSnap.exists) {
+        const data = docSnap.data();
+        updateBars(data.boy, data.girl);
+      } else {
+        console.log("No such document!");
+      }
+    }
+
+    // Update the vote bars with the fetched data
+    function updateBars(boyVotes, girlVotes) {
+      let totalVotes = boyVotes + girlVotes;
+      let boyPercent = totalVotes ? (boyVotes / totalVotes * 100).toFixed(0) : 50;
+      let girlPercent = totalVotes ? (girlVotes / totalVotes * 100).toFixed(0) : 50;
+
+      document.getElementById('boyBar').style.width = boyPercent + '%';
+      document.getElementById('boyBar').textContent = `${boyPercent}% Boy`;
+
+      document.getElementById('girlBar').style.width = girlPercent + '%';
+      document.getElementById('girlBar').textContent = `${girlPercent}% Girl`;
+    }
+
+    // Cast vote and update Firebase
+    async function castVote(choice) {
+      if (hasVoted) {
+        alert("You've already voted! Thank you ❤️");
+        return;
+      }
+
+      const docRef = db.collection('votes').doc('gender-votes');
+      await docRef.update({
+        [choice]: firebase.firestore.FieldValue.increment(1)
+      });
+
+      localStorage.setItem('hasVoted', 'true');
+      document.getElementById('thankYouMessage').style.display = 'block';
+      launchConfetti();
+
+      fetchVotes(); // Refresh vote counts after voting
+    }
+
+    function launchConfetti() {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#4da6ff', '#ff66b3']
+      });
+    }
+
+    fetchVotes(); // Initial fetch of vote counts when the page loads
+
+  </script>
+
+
+</body>
+</html>
